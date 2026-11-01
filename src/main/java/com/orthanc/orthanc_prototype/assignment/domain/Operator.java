@@ -1,5 +1,6 @@
 package com.orthanc.orthanc_prototype.assignment.domain;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -34,6 +35,19 @@ public enum Operator {
 
 	public boolean supports(Kind kind) {
 		return supportedKinds.contains(kind);
+	}
+
+	public Set<Kind> supportedKinds() {
+		return Collections.unmodifiableSet(supportedKinds);
+	}
+
+	public int minOperands() {
+		return minOperands;
+	}
+
+	/** Maximum number of operands, or {@link Integer#MAX_VALUE} when unbounded. */
+	public int maxOperands() {
+		return maxOperands;
 	}
 
 	void validateOperandCount(int count) {

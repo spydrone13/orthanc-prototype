@@ -1,0 +1,12 @@
+.condition-badge {
+	font-family: var(--bs-font-monospace);
+	font-weight: normal;
+	white-space: normal;
+	text-align: left;
+}
+
+.condition-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+}

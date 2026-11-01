@@ -1,5 +1,7 @@
 package com.orthanc.orthanc_prototype.machine.adapter.out.memory;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +21,11 @@ public class InMemoryMachineRepository implements MachineRepository {
 
 	public InMemoryMachineRepository(MachineSeedProperties seedProperties) {
 		seedProperties.machines().forEach(seed -> save(new EtchingMachine(seed.id(), seed.name())));
+	}
+
+	@Override
+	public List<EtchingMachine> findAll() {
+		return machines.values().stream().sorted(Comparator.comparing(EtchingMachine::getId)).toList();
 	}
 
 	@Override

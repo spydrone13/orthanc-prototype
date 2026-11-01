@@ -1,5 +1,6 @@
 package com.orthanc.orthanc_prototype.assignment.adapter.in.web;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -99,7 +100,8 @@ class AssignmentApiIntegrationTest {
 
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
 			.content(BIG_A100_RULE.replace("\"name\": \"Big A100\",", "")))
-			.andExpect(status().isBadRequest());
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("name: must not be blank"));
 
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
 			.content(BIG_A100_RULE.replace("CHIP_TYPE", "COLOR")))
@@ -116,6 +118,30 @@ class AssignmentApiIntegrationTest {
 
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON).content(rule))
 			.andExpect(status().isConflict());
+	}
+
+	@Test
+	void exposesMachinesAndConditionTypesForTheUi() throws Exception {
+		mockMvc.perform(get("/api/machines"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[*].id", contains("ETCH-01", "ETCH-02")))
+			.andExpect(jsonPath("$[0].name").value("Plasma Etcher 1"));
+
+		mockMvc.perform(get("/api/assignment-rules/condition-types"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.attributes[?(@.name == 'WAFER_COUNT')].kind", contains("NUMERIC")))
+			.andExpect(jsonPath("$.operators[?(@.name == 'BETWEEN')].minOperands", contains(2)))
+			.andExpect(jsonPath("$.operators[?(@.name == 'BETWEEN')].kinds[*]", contains("NUMERIC")))
+			.andExpect(jsonPath("$.operators[?(@.name == 'IN')].maxOperands", contains((Object) null)))
+			.andExpect(jsonPath("$.operators[?(@.name == 'EQUALS')].kinds[*]", contains("TEXT", "NUMERIC")));
+	}
+
+	@Test
+	void servesRulesUi() throws Exception {
+		mockMvc.perform(get("/rules.html")).andExpect(status().isOk());
+		mockMvc.perform(get("/js/rules.js")).andExpect(status().isOk());
+		mockMvc.perform(get("/webjars/bootstrap/css/bootstrap.min.css")).andExpect(status().isOk());
+		mockMvc.perform(get("/webjars/bootstrap/js/bootstrap.bundle.min.js")).andExpect(status().isOk());
 	}
 
 	private static org.springframework.test.web.servlet.RequestBuilder autoAssign(String chipType, int waferCount) {
