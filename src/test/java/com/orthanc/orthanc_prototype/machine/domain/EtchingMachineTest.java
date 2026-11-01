@@ -1,4 +1,4 @@
-package com.orthanc.orthanc_prototype.machine;
+package com.orthanc.orthanc_prototype.machine.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.orthanc.orthanc_prototype.lot.Lot;
+import com.orthanc.orthanc_prototype.lot.domain.Lot;
 
 class EtchingMachineTest {
 

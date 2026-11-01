@@ -1,4 +1,4 @@
-package com.orthanc.orthanc_prototype.lot;
+package com.orthanc.orthanc_prototype.lot.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

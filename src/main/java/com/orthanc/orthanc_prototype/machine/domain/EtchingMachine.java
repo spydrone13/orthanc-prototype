@@ -1,10 +1,10 @@
-package com.orthanc.orthanc_prototype.machine;
+package com.orthanc.orthanc_prototype.machine.domain;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.orthanc.orthanc_prototype.lot.Lot;
+import com.orthanc.orthanc_prototype.lot.domain.Lot;
 
 public class EtchingMachine {
 
