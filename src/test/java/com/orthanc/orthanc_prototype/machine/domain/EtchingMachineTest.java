@@ -8,7 +8,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.orthanc.orthanc_prototype.lot.domain.ChipType;
 import com.orthanc.orthanc_prototype.lot.domain.Lot;
+import com.orthanc.orthanc_prototype.lot.domain.ProcessType;
 
 class EtchingMachineTest {
 
@@ -38,8 +40,8 @@ class EtchingMachineTest {
 	@Test
 	void assignLotKeepsLotsInAssignmentOrder() {
 		EtchingMachine machine = new EtchingMachine("ETCH-01", "Plasma Etcher 1");
-		Lot first = new Lot("A100", "CMOS-7nm", 25);
-		Lot second = new Lot("B200", "CMOS-5nm", 20);
+		Lot first = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
+		Lot second = new Lot(ChipType.Z_SERIES, ProcessType.NEXTGEN, 20);
 
 		machine.assignLot(first);
 		machine.assignLot(second);
@@ -50,7 +52,7 @@ class EtchingMachineTest {
 	@Test
 	void rejectsAssigningSameLotTwice() {
 		EtchingMachine machine = new EtchingMachine("ETCH-01", "Plasma Etcher 1");
-		Lot lot = new Lot("A100", "CMOS-7nm", 25);
+		Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 		machine.assignLot(lot);
 
 		assertThrows(IllegalStateException.class, () -> machine.assignLot(lot));
@@ -67,8 +69,8 @@ class EtchingMachineTest {
 	@Test
 	void unassignLotRemovesOnlyThatLot() {
 		EtchingMachine machine = new EtchingMachine("ETCH-01", "Plasma Etcher 1");
-		Lot first = new Lot("A100", "CMOS-7nm", 25);
-		Lot second = new Lot("B200", "CMOS-5nm", 20);
+		Lot first = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
+		Lot second = new Lot(ChipType.Z_SERIES, ProcessType.NEXTGEN, 20);
 		machine.assignLot(first);
 		machine.assignLot(second);
 
@@ -80,7 +82,7 @@ class EtchingMachineTest {
 	@Test
 	void rejectsUnassigningLotThatIsNotAssigned() {
 		EtchingMachine machine = new EtchingMachine("ETCH-01", "Plasma Etcher 1");
-		Lot lot = new Lot("A100", "CMOS-7nm", 25);
+		Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 
 		assertThrows(IllegalArgumentException.class, () -> machine.unassignLot(lot));
 	}
@@ -88,7 +90,7 @@ class EtchingMachineTest {
 	@Test
 	void assignedLotsCannotBeModifiedDirectly() {
 		EtchingMachine machine = new EtchingMachine("ETCH-01", "Plasma Etcher 1");
-		Lot lot = new Lot("A100", "CMOS-7nm", 25);
+		Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 
 		assertThrows(UnsupportedOperationException.class, () -> machine.getAssignedLots().add(lot));
 	}

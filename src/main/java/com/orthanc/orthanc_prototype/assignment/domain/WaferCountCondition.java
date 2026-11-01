@@ -40,6 +40,7 @@ public final class WaferCountCondition implements Condition {
 		return switch (operator) {
 			case EQUALS -> value == values.getFirst();
 			case IN -> values.contains(value);
+			case NOT_IN -> !values.contains(value);
 			case LESS_THAN -> value < values.getFirst();
 			case LESS_THAN_OR_EQUAL -> value <= values.getFirst();
 			case GREATER_THAN -> value > values.getFirst();

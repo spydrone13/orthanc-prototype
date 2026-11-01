@@ -12,10 +12,9 @@ import com.orthanc.orthanc_prototype.assignment.domain.LotAttribute.Kind;
  */
 public enum Operator {
 
-	EQUALS(1, 1, Kind.TEXT, Kind.NUMERIC),
-	IN(1, Integer.MAX_VALUE, Kind.TEXT, Kind.NUMERIC),
-	STARTS_WITH(1, 1, Kind.TEXT),
-	MATCHES(1, 1, Kind.TEXT),
+	EQUALS(1, 1, Kind.ENUMERATED, Kind.NUMERIC),
+	IN(1, Integer.MAX_VALUE, Kind.ENUMERATED, Kind.NUMERIC),
+	NOT_IN(1, Integer.MAX_VALUE, Kind.ENUMERATED, Kind.NUMERIC),
 	LESS_THAN(1, 1, Kind.NUMERIC),
 	LESS_THAN_OR_EQUAL(1, 1, Kind.NUMERIC),
 	GREATER_THAN(1, 1, Kind.NUMERIC),

@@ -9,16 +9,16 @@ class LotTest {
 
 	@Test
 	void constructorSetsFields() {
-		Lot lot = new Lot("A100", "CMOS-7nm", 25);
+		Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 
-		assertEquals("A100", lot.getChipType());
-		assertEquals("CMOS-7nm", lot.getProcessType());
+		assertEquals(ChipType.X_SERIES, lot.getChipType());
+		assertEquals(ProcessType.STANDARD, lot.getProcessType());
 		assertEquals(25, lot.getWaferCount());
 	}
 
 	@Test
 	void setWaferCountUpdatesCount() {
-		Lot lot = new Lot("A100", "CMOS-7nm", 25);
+		Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 
 		lot.setWaferCount(23);
 
@@ -27,18 +27,16 @@ class LotTest {
 
 	@Test
 	void rejectsNegativeWaferCount() {
-		assertThrows(IllegalArgumentException.class, () -> new Lot("A100", "CMOS-7nm", -1));
+		assertThrows(IllegalArgumentException.class, () -> new Lot(ChipType.X_SERIES, ProcessType.STANDARD, -1));
 
-		Lot lot = new Lot("A100", "CMOS-7nm", 25);
+		Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 		assertThrows(IllegalArgumentException.class, () -> lot.setWaferCount(-1));
 	}
 
 	@Test
-	void rejectsNullOrBlankTypes() {
-		assertThrows(NullPointerException.class, () -> new Lot(null, "CMOS-7nm", 25));
-		assertThrows(NullPointerException.class, () -> new Lot("A100", null, 25));
-		assertThrows(IllegalArgumentException.class, () -> new Lot(" ", "CMOS-7nm", 25));
-		assertThrows(IllegalArgumentException.class, () -> new Lot("A100", "", 25));
+	void rejectsNullTypes() {
+		assertThrows(NullPointerException.class, () -> new Lot(null, ProcessType.STANDARD, 25));
+		assertThrows(NullPointerException.class, () -> new Lot(ChipType.X_SERIES, null, 25));
 	}
 
 }

@@ -4,21 +4,21 @@ import java.util.Objects;
 
 public class Lot {
 
-	private final String chipType;
-	private final String processType;
+	private final ChipType chipType;
+	private final ProcessType processType;
 	private int waferCount;
 
-	public Lot(String chipType, String processType, int waferCount) {
-		this.chipType = requireNonBlank(chipType, "chipType");
-		this.processType = requireNonBlank(processType, "processType");
+	public Lot(ChipType chipType, ProcessType processType, int waferCount) {
+		this.chipType = Objects.requireNonNull(chipType, "chipType must not be null");
+		this.processType = Objects.requireNonNull(processType, "processType must not be null");
 		setWaferCount(waferCount);
 	}
 
-	public String getChipType() {
+	public ChipType getChipType() {
 		return chipType;
 	}
 
-	public String getProcessType() {
+	public ProcessType getProcessType() {
 		return processType;
 	}
 
@@ -35,15 +35,7 @@ public class Lot {
 
 	@Override
 	public String toString() {
-		return "Lot{chipType='" + chipType + "', processType='" + processType + "', waferCount=" + waferCount + "}";
-	}
-
-	private static String requireNonBlank(String value, String name) {
-		Objects.requireNonNull(value, name + " must not be null");
-		if (value.isBlank()) {
-			throw new IllegalArgumentException(name + " must not be blank");
-		}
-		return value;
+		return "Lot{chipType=" + chipType + ", processType=" + processType + ", waferCount=" + waferCount + "}";
 	}
 
 }

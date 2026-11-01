@@ -31,39 +31,39 @@ class AssignmentRuleServiceTest {
 
 	@Test
 	void createPersistsRule() {
-		AssignmentRule rule = service.create(command("A100", 10, "ETCH-01"));
+		AssignmentRule rule = service.create(command("X_SERIES", 10, "ETCH-01"));
 
 		assertEquals(List.of(rule), service.listAll());
-		assertEquals("A100", rule.getConditions().getFirst().operands().getFirst());
+		assertEquals("X_SERIES", rule.getConditions().getFirst().operands().getFirst());
 	}
 
 	@Test
 	void createRejectsUnknownMachine() {
-		assertThrows(InvalidAssignmentRuleException.class, () -> service.create(command("A100", 10, "ETCH-99")));
+		assertThrows(InvalidAssignmentRuleException.class, () -> service.create(command("X_SERIES", 10, "ETCH-99")));
 		assertTrue(service.listAll().isEmpty());
 	}
 
 	@Test
 	void createRejectsDuplicatePriority() {
-		service.create(command("A100", 10, "ETCH-01"));
+		service.create(command("X_SERIES", 10, "ETCH-01"));
 
-		assertThrows(DuplicateRulePriorityException.class, () -> service.create(command("B200", 10, "ETCH-02")));
+		assertThrows(DuplicateRulePriorityException.class, () -> service.create(command("Z_SERIES", 10, "ETCH-02")));
 	}
 
 	@Test
 	void updateMayKeepItsOwnPriorityButNotTakeAnother() {
-		AssignmentRule first = service.create(command("A100", 10, "ETCH-01"));
-		service.create(command("B200", 20, "ETCH-02"));
+		AssignmentRule first = service.create(command("X_SERIES", 10, "ETCH-01"));
+		service.create(command("Z_SERIES", 20, "ETCH-02"));
 
-		AssignmentRule updated = service.update(first.getId(), command("C300", 10, "ETCH-02"));
+		AssignmentRule updated = service.update(first.getId(), command("Q_SERIES", 10, "ETCH-02"));
 		assertEquals("ETCH-02", updated.getTargetMachineId());
 
-		assertThrows(DuplicateRulePriorityException.class, () -> service.update(first.getId(), command("C300", 20, "ETCH-02")));
+		assertThrows(DuplicateRulePriorityException.class, () -> service.update(first.getId(), command("Q_SERIES", 20, "ETCH-02")));
 	}
 
 	@Test
 	void setEnabledTogglesRule() {
-		AssignmentRule rule = service.create(command("A100", 10, "ETCH-01"));
+		AssignmentRule rule = service.create(command("X_SERIES", 10, "ETCH-01"));
 
 		assertFalse(service.setEnabled(rule.getId(), false).isEnabled());
 		assertTrue(service.setEnabled(rule.getId(), true).isEnabled());
@@ -71,7 +71,7 @@ class AssignmentRuleServiceTest {
 
 	@Test
 	void deleteRemovesRule() {
-		AssignmentRule rule = service.create(command("A100", 10, "ETCH-01"));
+		AssignmentRule rule = service.create(command("X_SERIES", 10, "ETCH-01"));
 
 		service.delete(rule.getId());
 
@@ -83,7 +83,7 @@ class AssignmentRuleServiceTest {
 		AssignmentRuleId unknown = AssignmentRuleId.newId();
 
 		assertThrows(AssignmentRuleNotFoundException.class, () -> service.get(unknown));
-		assertThrows(AssignmentRuleNotFoundException.class, () -> service.update(unknown, command("A100", 1, "ETCH-01")));
+		assertThrows(AssignmentRuleNotFoundException.class, () -> service.update(unknown, command("X_SERIES", 1, "ETCH-01")));
 		assertThrows(AssignmentRuleNotFoundException.class, () -> service.setEnabled(unknown, false));
 		assertThrows(AssignmentRuleNotFoundException.class, () -> service.delete(unknown));
 	}

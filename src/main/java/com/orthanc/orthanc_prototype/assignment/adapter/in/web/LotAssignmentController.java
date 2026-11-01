@@ -8,9 +8,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.orthanc.orthanc_prototype.assignment.application.port.in.AutoAssignLotUseCase;
 import com.orthanc.orthanc_prototype.assignment.application.port.in.AutoAssignLotUseCase.AssignmentOutcome;
 import com.orthanc.orthanc_prototype.assignment.application.port.in.AutoAssignLotUseCase.AutoAssignLotCommand;
+import com.orthanc.orthanc_prototype.lot.domain.ChipType;
+import com.orthanc.orthanc_prototype.lot.domain.ProcessType;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
@@ -34,7 +35,7 @@ class LotAssignmentController {
 		};
 	}
 
-	record AutoAssignLotRequest(@NotBlank String chipType, @NotBlank String processType,
+	record AutoAssignLotRequest(@NotNull ChipType chipType, @NotNull ProcessType processType,
 			@NotNull @PositiveOrZero Integer waferCount) {
 	}
 

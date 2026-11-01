@@ -7,30 +7,32 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import com.orthanc.orthanc_prototype.lot.domain.ChipType;
 import com.orthanc.orthanc_prototype.lot.domain.Lot;
+import com.orthanc.orthanc_prototype.lot.domain.ProcessType;
 
 class AssignmentRuleEvaluatorTest {
 
 	private final AssignmentRuleEvaluator evaluator = new AssignmentRuleEvaluator();
 
-	private final Lot lot = new Lot("A100", "CMOS-7nm", 25);
+	private final Lot lot = new Lot(ChipType.X_SERIES, ProcessType.STANDARD, 25);
 
 	@Test
 	void picksMatchingRuleWithLowestPriorityRegardlessOfInputOrder() {
 		AssignmentRule catchAll = AssignmentRule.create("Catch-all", 100, List.of(), "ETCH-01");
-		AssignmentRule a100 = AssignmentRule.create("A100", 10,
-				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("A100"))), "ETCH-02");
+		AssignmentRule xSeries = AssignmentRule.create("X-series", 10,
+				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("X_SERIES"))), "ETCH-02");
 
-		assertEquals(a100, evaluator.selectRuleFor(lot, List.of(catchAll, a100)).orElseThrow());
+		assertEquals(xSeries, evaluator.selectRuleFor(lot, List.of(catchAll, xSeries)).orElseThrow());
 	}
 
 	@Test
 	void skipsRulesThatDoNotMatch() {
-		AssignmentRule b200 = AssignmentRule.create("B200", 1,
-				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("B200"))), "ETCH-02");
+		AssignmentRule zSeries = AssignmentRule.create("Z-series", 1,
+				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("Z_SERIES"))), "ETCH-02");
 		AssignmentRule catchAll = AssignmentRule.create("Catch-all", 100, List.of(), "ETCH-01");
 
-		assertEquals(catchAll, evaluator.selectRuleFor(lot, List.of(b200, catchAll)).orElseThrow());
+		assertEquals(catchAll, evaluator.selectRuleFor(lot, List.of(zSeries, catchAll)).orElseThrow());
 	}
 
 	@Test
@@ -44,10 +46,10 @@ class AssignmentRuleEvaluatorTest {
 
 	@Test
 	void returnsEmptyWhenNoRuleMatches() {
-		AssignmentRule b200 = AssignmentRule.create("B200", 1,
-				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("B200"))), "ETCH-02");
+		AssignmentRule zSeries = AssignmentRule.create("Z-series", 1,
+				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("Z_SERIES"))), "ETCH-02");
 
-		assertTrue(evaluator.selectRuleFor(lot, List.of(b200)).isEmpty());
+		assertTrue(evaluator.selectRuleFor(lot, List.of(zSeries)).isEmpty());
 		assertTrue(evaluator.selectRuleFor(lot, List.of()).isEmpty());
 	}
 

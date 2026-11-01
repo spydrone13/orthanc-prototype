@@ -1,7 +1,9 @@
 package com.orthanc.orthanc_prototype.assignment.adapter.in.web;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -28,13 +30,13 @@ import com.jayway.jsonpath.JsonPath;
 @Transactional
 class AssignmentApiIntegrationTest {
 
-	private static final String BIG_A100_RULE = """
+	private static final String BIG_X_SERIES_RULE = """
 			{
-			  "name": "Big A100",
+			  "name": "Big X-series",
 			  "priority": 10,
 			  "targetMachineId": "ETCH-02",
 			  "conditions": [
-			    {"attribute": "CHIP_TYPE", "operator": "EQUALS", "values": ["A100"]},
+			    {"attribute": "CHIP_TYPE", "operator": "EQUALS", "values": ["X_SERIES"]},
 			    {"attribute": "WAFER_COUNT", "operator": "GREATER_THAN", "values": ["20"]}
 			  ]
 			}
@@ -45,7 +47,7 @@ class AssignmentApiIntegrationTest {
 
 	@Test
 	void ruleLifecycleAndAutoAssignment() throws Exception {
-		String body = mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON).content(BIG_A100_RULE))
+		String body = mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON).content(BIG_X_SERIES_RULE))
 			.andExpect(status().isCreated())
 			.andExpect(header().exists("Location"))
 			.andExpect(jsonPath("$.enabled").value(true))
@@ -56,15 +58,15 @@ class AssignmentApiIntegrationTest {
 
 		mockMvc.perform(get("/api/assignment-rules/{id}", id))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.name").value("Big A100"));
+			.andExpect(jsonPath("$.name").value("Big X-series"));
 
-		mockMvc.perform(autoAssign("A100", 25))
+		mockMvc.perform(autoAssign("X_SERIES", 25))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("ASSIGNED"))
 			.andExpect(jsonPath("$.machineId").value("ETCH-02"))
 			.andExpect(jsonPath("$.ruleId").value(id));
 
-		mockMvc.perform(autoAssign("A100", 5))
+		mockMvc.perform(autoAssign("X_SERIES", 5))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("UNASSIGNED"))
 			.andExpect(jsonPath("$.machineId").doesNotExist());
@@ -74,10 +76,10 @@ class AssignmentApiIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.enabled").value(false));
 
-		mockMvc.perform(autoAssign("A100", 25)).andExpect(jsonPath("$.status").value("UNASSIGNED"));
+		mockMvc.perform(autoAssign("X_SERIES", 25)).andExpect(jsonPath("$.status").value("UNASSIGNED"));
 
 		mockMvc.perform(put("/api/assignment-rules/{id}", id).contentType(MediaType.APPLICATION_JSON)
-			.content(BIG_A100_RULE.replace("ETCH-02", "ETCH-01")))
+			.content(BIG_X_SERIES_RULE.replace("ETCH-02", "ETCH-01")))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.targetMachineId").value("ETCH-01"));
 
@@ -90,29 +92,47 @@ class AssignmentApiIntegrationTest {
 	@Test
 	void rejectsInvalidRules() throws Exception {
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
-			.content(BIG_A100_RULE.replace("\"GREATER_THAN\"", "\"STARTS_WITH\"")))
+			.content(BIG_X_SERIES_RULE.replace("\"operator\": \"EQUALS\"", "\"operator\": \"LESS_THAN\"")))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.detail").value("Operator STARTS_WITH is not supported for WAFER_COUNT"));
+			.andExpect(jsonPath("$.detail").value("Operator LESS_THAN is not supported for CHIP_TYPE"));
 
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
-			.content(BIG_A100_RULE.replace("ETCH-02", "ETCH-99")))
+			.content(BIG_X_SERIES_RULE.replace("[\"X_SERIES\"]", "[\"A100\"]")))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("Unknown CHIP_TYPE value 'A100'; allowed: X_SERIES, Z_SERIES, Q_SERIES"));
+
+		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
+			.content(BIG_X_SERIES_RULE.replace("\"EQUALS\"", "\"MATCHES\"")))
 			.andExpect(status().isBadRequest());
 
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
-			.content(BIG_A100_RULE.replace("\"name\": \"Big A100\",", "")))
+			.content(BIG_X_SERIES_RULE.replace("ETCH-02", "ETCH-99")))
+			.andExpect(status().isBadRequest());
+
+		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
+			.content(BIG_X_SERIES_RULE.replace("\"name\": \"Big X-series\",", "")))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.detail").value("name: must not be blank"));
 
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON)
-			.content(BIG_A100_RULE.replace("CHIP_TYPE", "COLOR")))
+			.content(BIG_X_SERIES_RULE.replace("CHIP_TYPE", "COLOR")))
 			.andExpect(status().isBadRequest());
 
 		mockMvc.perform(get("/api/assignment-rules/not-a-uuid")).andExpect(status().isBadRequest());
 	}
 
 	@Test
+	void rejectsAutoAssignmentOfLotWithUnknownTypes() throws Exception {
+		mockMvc.perform(autoAssign("A100", 25)).andExpect(status().isBadRequest());
+		mockMvc.perform(post("/api/lots/auto-assignments").contentType(MediaType.APPLICATION_JSON)
+			.content("{\"chipType\": \"X_SERIES\", \"waferCount\": 25}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.detail").value("processType: must not be null"));
+	}
+
+	@Test
 	void rejectsDuplicatePriority() throws Exception {
-		String rule = BIG_A100_RULE.replace("\"priority\": 10", "\"priority\": 42");
+		String rule = BIG_X_SERIES_RULE.replace("\"priority\": 10", "\"priority\": 42");
 		mockMvc.perform(post("/api/assignment-rules").contentType(MediaType.APPLICATION_JSON).content(rule))
 			.andExpect(status().isCreated());
 
@@ -130,10 +150,17 @@ class AssignmentApiIntegrationTest {
 		mockMvc.perform(get("/api/assignment-rules/condition-types"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.attributes[?(@.name == 'WAFER_COUNT')].kind", contains("NUMERIC")))
+			.andExpect(jsonPath("$.attributes[?(@.name == 'CHIP_TYPE')].kind", contains("ENUMERATED")))
+			.andExpect(jsonPath("$.attributes[?(@.name == 'CHIP_TYPE')].values[*]",
+					contains("X_SERIES", "Z_SERIES", "Q_SERIES")))
+			.andExpect(jsonPath("$.attributes[?(@.name == 'PROCESS_TYPE')].values[*]",
+					contains("LEGACY", "STANDARD", "NEXTGEN")))
+			.andExpect(jsonPath("$.operators[*].name", not(hasItem("MATCHES"))))
+			.andExpect(jsonPath("$.operators[?(@.name == 'NOT_IN')].kinds[*]", contains("ENUMERATED", "NUMERIC")))
 			.andExpect(jsonPath("$.operators[?(@.name == 'BETWEEN')].minOperands", contains(2)))
 			.andExpect(jsonPath("$.operators[?(@.name == 'BETWEEN')].kinds[*]", contains("NUMERIC")))
 			.andExpect(jsonPath("$.operators[?(@.name == 'IN')].maxOperands", contains((Object) null)))
-			.andExpect(jsonPath("$.operators[?(@.name == 'EQUALS')].kinds[*]", contains("TEXT", "NUMERIC")));
+			.andExpect(jsonPath("$.operators[?(@.name == 'EQUALS')].kinds[*]", contains("ENUMERATED", "NUMERIC")));
 	}
 
 	@Test
@@ -146,7 +173,7 @@ class AssignmentApiIntegrationTest {
 
 	private static org.springframework.test.web.servlet.RequestBuilder autoAssign(String chipType, int waferCount) {
 		return post("/api/lots/auto-assignments").contentType(MediaType.APPLICATION_JSON)
-			.content("{\"chipType\": \"" + chipType + "\", \"processType\": \"CMOS-7nm\", \"waferCount\": " + waferCount + "}");
+			.content("{\"chipType\": \"" + chipType + "\", \"processType\": \"STANDARD\", \"waferCount\": " + waferCount + "}");
 	}
 
 }

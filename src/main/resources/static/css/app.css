@@ -10,3 +10,28 @@
 	flex-wrap: wrap;
 	gap: 0.25rem;
 }
+
+/* Checkbox groups are validated as a whole (see validateCheckboxGroups in rules.js), so suppress
+   Bootstrap's per-checkbox "valid" styling and colour the whole group when it's invalid. */
+.was-validated .condition-value-checks .form-check-input:valid {
+	border-color: var(--bs-border-color);
+}
+
+.was-validated .condition-value-checks .form-check-input:valid:checked {
+	background-color: var(--bs-primary);
+	border-color: var(--bs-primary);
+}
+
+.was-validated .condition-value-checks .form-check-input:valid ~ .form-check-label {
+	color: inherit;
+}
+
+.condition-value-checks.is-invalid .form-check-input,
+.was-validated .condition-value-checks.is-invalid .form-check-input:valid {
+	border-color: var(--bs-form-invalid-border-color);
+}
+
+.condition-value-checks.is-invalid .form-check-label,
+.was-validated .condition-value-checks.is-invalid .form-check-input:valid ~ .form-check-label {
+	color: var(--bs-form-invalid-color);
+}

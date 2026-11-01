@@ -16,7 +16,9 @@ import com.orthanc.orthanc_prototype.assignment.domain.AssignmentRuleEvaluator;
 import com.orthanc.orthanc_prototype.assignment.domain.Condition;
 import com.orthanc.orthanc_prototype.assignment.domain.LotAttribute;
 import com.orthanc.orthanc_prototype.assignment.domain.Operator;
+import com.orthanc.orthanc_prototype.lot.domain.ChipType;
 import com.orthanc.orthanc_prototype.lot.domain.Lot;
+import com.orthanc.orthanc_prototype.lot.domain.ProcessType;
 import com.orthanc.orthanc_prototype.machine.adapter.out.memory.InMemoryMachineRepository;
 import com.orthanc.orthanc_prototype.machine.adapter.out.memory.MachineSeedProperties;
 import com.orthanc.orthanc_prototype.machine.adapter.out.memory.MachineSeedProperties.MachineSeed;
@@ -37,12 +39,12 @@ class LotAutoAssignmentServiceTest {
 				List.of(Condition.of(LotAttribute.WAFER_COUNT, Operator.GREATER_THAN, List.of("20"))), "ETCH-02"));
 		rules.save(AssignmentRule.create("Catch-all", 100, List.of(), "ETCH-01"));
 
-		AssignmentOutcome outcome = service.autoAssign(new AutoAssignLotCommand("A100", "CMOS-7nm", 25));
+		AssignmentOutcome outcome = service.autoAssign(new AutoAssignLotCommand(ChipType.X_SERIES, ProcessType.STANDARD, 25));
 
 		assertEquals(new AssignmentOutcome.Assigned("ETCH-02", bigLots.getId()), outcome);
 		List<Lot> assigned = machines.findById("ETCH-02").orElseThrow().getAssignedLots();
 		assertEquals(1, assigned.size());
-		assertEquals("A100", assigned.getFirst().getChipType());
+		assertEquals(ChipType.X_SERIES, assigned.getFirst().getChipType());
 		assertTrue(machines.findById("ETCH-01").orElseThrow().getAssignedLots().isEmpty());
 	}
 
@@ -51,7 +53,7 @@ class LotAutoAssignmentServiceTest {
 		rules.save(AssignmentRule.create("Big lots", 10,
 				List.of(Condition.of(LotAttribute.WAFER_COUNT, Operator.GREATER_THAN, List.of("20"))), "ETCH-02"));
 
-		AssignmentOutcome outcome = service.autoAssign(new AutoAssignLotCommand("A100", "CMOS-7nm", 5));
+		AssignmentOutcome outcome = service.autoAssign(new AutoAssignLotCommand(ChipType.X_SERIES, ProcessType.STANDARD, 5));
 
 		assertInstanceOf(AssignmentOutcome.Unassigned.class, outcome);
 		assertTrue(machines.findById("ETCH-02").orElseThrow().getAssignedLots().isEmpty());
@@ -62,7 +64,7 @@ class LotAutoAssignmentServiceTest {
 		rules.save(AssignmentRule.create("Stale", 1, List.of(), "ETCH-99"));
 
 		assertThrows(IllegalStateException.class,
-				() -> service.autoAssign(new AutoAssignLotCommand("A100", "CMOS-7nm", 25)));
+				() -> service.autoAssign(new AutoAssignLotCommand(ChipType.X_SERIES, ProcessType.STANDARD, 25)));
 	}
 
 }

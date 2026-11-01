@@ -8,7 +8,7 @@ import com.orthanc.orthanc_prototype.lot.domain.Lot;
  * A single test on a {@link Lot} attribute. Operands are kept in their string form so a condition
  * can be round-tripped through any adapter via {@link #of}.
  */
-public sealed interface Condition permits TextCondition, WaferCountCondition {
+public sealed interface Condition permits EnumCondition, WaferCountCondition {
 
 	LotAttribute attribute();
 
@@ -33,7 +33,7 @@ public sealed interface Condition permits TextCondition, WaferCountCondition {
 		}
 		operator.validateOperandCount(operands.size());
 		return switch (attribute.kind()) {
-			case TEXT -> new TextCondition(attribute, operator, operands);
+			case ENUMERATED -> new EnumCondition(attribute, operator, operands);
 			case NUMERIC -> new WaferCountCondition(operator, operands);
 		};
 	}

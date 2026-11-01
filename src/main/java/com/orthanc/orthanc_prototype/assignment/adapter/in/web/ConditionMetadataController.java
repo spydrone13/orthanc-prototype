@@ -20,7 +20,7 @@ class ConditionMetadataController {
 	ConditionTypesResponse conditionTypes() {
 		return new ConditionTypesResponse(
 				Arrays.stream(LotAttribute.values())
-					.map(attribute -> new AttributeType(attribute, attribute.kind()))
+					.map(attribute -> new AttributeType(attribute, attribute.kind(), attribute.allowedValues()))
 					.toList(),
 				Arrays.stream(Operator.values())
 					.map(operator -> new OperatorType(operator,
@@ -33,7 +33,8 @@ class ConditionMetadataController {
 	record ConditionTypesResponse(List<AttributeType> attributes, List<OperatorType> operators) {
 	}
 
-	record AttributeType(LotAttribute name, LotAttribute.Kind kind) {
+	/** {@code values} lists the allowed operands for ENUMERATED attributes and is empty otherwise. */
+	record AttributeType(LotAttribute name, LotAttribute.Kind kind, List<String> values) {
 	}
 
 	record OperatorType(Operator name, List<LotAttribute.Kind> kinds, int minOperands, Integer maxOperands) {

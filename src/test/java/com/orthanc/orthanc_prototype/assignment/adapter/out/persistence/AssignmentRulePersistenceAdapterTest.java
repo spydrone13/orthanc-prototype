@@ -32,8 +32,8 @@ class AssignmentRulePersistenceAdapterTest {
 	@Test
 	void roundTripsRuleWithOrderedConditionsAndOperands() {
 		List<Condition> conditions = List.of(
-				Condition.of(LotAttribute.CHIP_TYPE, Operator.IN, List.of("C300", "A100", "B200")),
-				Condition.of(LotAttribute.PROCESS_TYPE, Operator.MATCHES, List.of("CMOS-\\d+nm")),
+				Condition.of(LotAttribute.CHIP_TYPE, Operator.IN, List.of("Q_SERIES", "X_SERIES", "Z_SERIES")),
+				Condition.of(LotAttribute.PROCESS_TYPE, Operator.NOT_IN, List.of("LEGACY", "NEXTGEN")),
 				Condition.of(LotAttribute.WAFER_COUNT, Operator.BETWEEN, List.of("10", "25")));
 		AssignmentRule rule = AssignmentRule.create("Mixed", 7, conditions, "ETCH-01");
 		rule.disable();
@@ -53,7 +53,7 @@ class AssignmentRulePersistenceAdapterTest {
 	@Test
 	void saveOfExistingRuleReplacesConditions() {
 		AssignmentRule rule = AssignmentRule.create("R", 1,
-				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("A100")),
+				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("X_SERIES")),
 						Condition.of(LotAttribute.WAFER_COUNT, Operator.LESS_THAN, List.of("5"))),
 				"ETCH-01");
 		adapter.save(rule);
@@ -91,7 +91,7 @@ class AssignmentRulePersistenceAdapterTest {
 	@Test
 	void deleteRemovesRuleAndConditions() {
 		AssignmentRule rule = adapter.save(AssignmentRule.create("R", 1,
-				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("A100"))), "ETCH-01"));
+				List.of(Condition.of(LotAttribute.CHIP_TYPE, Operator.EQUALS, List.of("X_SERIES"))), "ETCH-01"));
 
 		adapter.deleteById(rule.getId());
 		entityManager.flush();

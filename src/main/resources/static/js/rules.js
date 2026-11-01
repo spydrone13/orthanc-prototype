@@ -12,8 +12,7 @@ const ATTRIBUTE_LABELS = {
 const OPERATOR_LABELS = {
 	EQUALS: '=',
 	IN: 'in',
-	STARTS_WITH: 'starts with',
-	MATCHES: 'matches regex',
+	NOT_IN: 'not in',
 	LESS_THAN: '<',
 	LESS_THAN_OR_EQUAL: '≤',
 	GREATER_THAN: '>',
@@ -50,7 +49,8 @@ function createElement(tag, { className, text, attrs } = {}, children = []) {
 
 const attributeLabel = (name) => ATTRIBUTE_LABELS[name] ?? name;
 const operatorLabel = (name) => OPERATOR_LABELS[name] ?? name;
-const attributeKind = (name) => state.attributes.find((a) => a.name === name)?.kind;
+const attributeType = (name) => state.attributes.find((a) => a.name === name);
+const attributeKind = (name) => attributeType(name)?.kind;
 const operatorType = (name) => state.operators.find((o) => o.name === name);
 const operatorsFor = (attribute) => state.operators.filter((o) => o.kinds.includes(attributeKind(attribute)));
 const isListOperator = (operator) => operatorType(operator)?.maxOperands === null;
@@ -58,7 +58,7 @@ const isListOperator = (operator) => operatorType(operator)?.maxOperands === nul
 function describeCondition({ attribute, operator, values }) {
 	const label = attributeLabel(attribute);
 	if (operator === 'BETWEEN') return `${label} between ${values[0]} and ${values[1]}`;
-	if (isListOperator(operator)) return `${label} in [${values.join(', ')}]`;
+	if (isListOperator(operator)) return `${label} ${operatorLabel(operator)} [${values.join(', ')}]`;
 	return `${label} ${operatorLabel(operator)} ${values.join(', ')}`;
 }
 
@@ -191,23 +191,56 @@ function addConditionRow(condition) {
 	updateNoConditionsHint();
 }
 
-function valueInput(numeric, value, placeholder) {
+function numberInput(value, placeholder) {
 	const input = createElement('input', {
 		className: 'form-control condition-value',
-		attrs: numeric
-			? { type: 'number', step: '1', required: '', placeholder }
-			: { type: 'text', required: '', placeholder },
+		attrs: { type: 'number', step: '1', required: '', placeholder },
 	});
 	input.value = value ?? '';
 	return input;
 }
 
+let checkboxIdCounter = 0;
+
+// Enumerated attributes: a dropdown for single-value operators, a checkbox group for IN / NOT_IN.
+function renderEnumInputs(container, attribute, type, values) {
+	const allowed = attributeType(attribute).values;
+
+	if (type.maxOperands === null) {
+		const checks = allowed.map((value) => {
+			const id = `condition-check-${++checkboxIdCounter}`;
+			const checkbox = createElement('input', { className: 'form-check-input', attrs: { type: 'checkbox', id, value } });
+			checkbox.checked = values.includes(value);
+			checkbox.addEventListener('change', () => {
+				if (el('rule-form').classList.contains('was-validated')) validateCheckboxGroups();
+			});
+			return createElement('div', { className: 'form-check form-check-inline' }, [
+				checkbox,
+				createElement('label', { className: 'form-check-label', text: value, attrs: { for: id } }),
+			]);
+		});
+		container.replaceChildren(
+			createElement('div', { className: 'condition-value-checks pt-2' }, checks),
+			createElement('div', { className: 'invalid-feedback', text: 'Select at least one value.' }));
+		return;
+	}
+
+	const select = createElement('select', { className: 'form-select condition-value', attrs: { 'aria-label': 'Value', required: '' } });
+	fillSelect(select, allowed.map((value) => ({ value, label: value })), allowed.includes(values[0]) ? values[0] : allowed[0]);
+	container.replaceChildren(select);
+}
+
 // Renders the value inputs for the row's current attribute/operator, keeping previously entered values.
 function renderValueInputs(row, values) {
 	const container = row.querySelector('.condition-values');
-	const numeric = attributeKind(row.querySelector('.condition-attribute').value) === 'NUMERIC';
+	const attribute = row.querySelector('.condition-attribute').value;
 	const operator = row.querySelector('.condition-operator').value;
 	const type = operatorType(operator);
+
+	if (attributeKind(attribute) === 'ENUMERATED') {
+		renderEnumInputs(container, attribute, type, values);
+		return;
+	}
 
 	if (type.maxOperands === null) {
 		const input = createElement('input', {
@@ -215,32 +248,46 @@ function renderValueInputs(row, values) {
 			attrs: {
 				type: 'text',
 				required: '',
-				placeholder: numeric ? 'Comma-separated, e.g. 20, 25' : 'Comma-separated, e.g. A100, B200',
-				...(numeric ? { pattern: '\\s*-?\\d+(\\s*,\\s*-?\\d+)*\\s*' } : {}),
+				placeholder: 'Comma-separated, e.g. 20, 25',
+				pattern: '\\s*-?\\d+(\\s*,\\s*-?\\d+)*\\s*',
 			},
 		});
 		input.value = values.join(', ');
 		container.replaceChildren(input,
-			createElement('div', { className: 'invalid-feedback', text: numeric ? 'Enter whole numbers separated by commas.' : 'Enter at least one value.' }));
+			createElement('div', { className: 'invalid-feedback', text: 'Enter whole numbers separated by commas.' }));
 		return;
 	}
 
 	if (type.minOperands === 2) {
 		container.replaceChildren(createElement('div', { className: 'input-group has-validation' }, [
-			valueInput(numeric, values[0], 'min'),
+			numberInput(values[0], 'min'),
 			createElement('span', { className: 'input-group-text', text: 'and' }),
-			valueInput(numeric, values[1], 'max'),
+			numberInput(values[1], 'max'),
 			createElement('div', { className: 'invalid-feedback', text: 'Enter both bounds.' }),
 		]));
 		return;
 	}
 
-	const input = valueInput(numeric, values[0], operator === 'MATCHES' ? 'Regular expression, e.g. CMOS-\\d+nm' : 'Value');
-	if (operator === 'MATCHES') input.classList.add('font-monospace');
-	container.replaceChildren(input, createElement('div', { className: 'invalid-feedback', text: 'Enter a value.' }));
+	container.replaceChildren(numberInput(values[0], 'Value'),
+		createElement('div', { className: 'invalid-feedback', text: 'Enter a value.' }));
+}
+
+// Checkbox groups have no native "required", so they're validated by hand. Returns true if all are valid.
+function validateCheckboxGroups() {
+	let valid = true;
+	for (const group of el('conditions-list').querySelectorAll('.condition-value-checks')) {
+		const groupValid = group.querySelector('input:checked') !== null;
+		group.classList.toggle('is-invalid', !groupValid);
+		valid &&= groupValid;
+	}
+	return valid;
 }
 
 function readValues(row) {
+	const checks = row.querySelector('.condition-value-checks');
+	if (checks) {
+		return [...checks.querySelectorAll('input:checked')].map((checkbox) => checkbox.value);
+	}
 	const list = row.querySelector('.condition-value-list');
 	if (list) {
 		return list.value.split(',').map((v) => v.trim()).filter((v) => v !== '');
@@ -296,7 +343,8 @@ async function saveRule(event) {
 	event.preventDefault();
 	const form = el('rule-form');
 	form.classList.add('was-validated');
-	if (!form.checkValidity()) {
+	const checkboxesValid = validateCheckboxGroups();
+	if (!form.checkValidity() || !checkboxesValid) {
 		return;
 	}
 
